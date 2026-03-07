@@ -58,9 +58,9 @@
     </style>
 </head>
 <body>
-    <audio id="bgMusic" loop>
-        <source src="nhac.mp3" type="audio/mpeg">
-    </audio>
+    <audio id="bgMusic" preload="auto" loop>
+    <source src="nhac.mp3" type="audio/mpeg">
+</audio>
 
     <div id="loader"><div class="spinner"></div>Chuẩn bị nhé...</div>
     
@@ -196,11 +196,16 @@
                 const music = document.getElementById('bgMusic');
                 if(music) music.play();
                 
-                gsap.to(envelope.flapPivot.rotation, { x: Math.PI * 0.8, duration: 0.8 });
-                gsap.to(envelope.position, { y: -15, duration: 1.2, delay: 0.4, onComplete: () => {
+               gsap.to(envelope.flapPivot.rotation, { x: Math.PI * 0.8, duration: 0.8 });
+               gsap.to(envelope.position, { 
+                y: -15, 
+                duration: 1.2, 
+                delay: 0.4, 
+                onComplete: () => {
                     scene.remove(envelope);
                     envelope = null;
-                }});
+                }
+                });
                 showCard();
             }
         }
