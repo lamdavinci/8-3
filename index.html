@@ -78,6 +78,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 
     <script>
+        let audioContext;
         let scene, camera, renderer, controls, bouquetModel, envelope, particleSystem, clock;
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
@@ -109,25 +110,28 @@
             scene.add(light);
 
             const loader = new THREE.GLTFLoader();
-        loader.load('./bouquet.glb', function (gltf) {
-            bouquetModel = gltf.scene;
-            if (bouquetModel) {
-                const box = new THREE.Box3().setFromObject(bouquetModel);
-                const size = box.getSize(new THREE.Vector3());
-                const scale = 8 / Math.max(size.x, size.y, size.z);
-                bouquetModel.scale.set(scale, scale, scale);
-                bouquetModel.position.set(0, -1, 0);
-                scene.add(bouquetModel);
-                setTimeout(createDetailed3DEnvelope, 1000);
-            }
-            document.getElementById('loader').style.display = 'none';
-        }, undefined, () => { document.getElementById('loader').style.display = 'none'; });
+            loader.load('bouquet.glb', function (gltf) {
+                bouquetModel = gltf.scene;
+                if (bouquetModel) {
+                    const box = new THREE.Box3().setFromObject(bouquetModel);
+                    const size = box.getSize(new THREE.Vector3());
+                    const scale = 8 / Math.max(size.x, size.y, size.z);
+                    bouquetModel.scale.set(scale, scale, scale);
+                    bouquetModel.position.set(0, -1, 0);
+                    scene.add(bouquetModel);
+                    gsap.from(bouquetModel.position, { y: -10, duration: 1.5, ease: "back.out(1.2)" });
+                    setTimeout(createDetailed3DEnvelope, 1000);
+                }
+                document.getElementById('loader').style.display = 'none';
+            }, undefined, (error) => {
+                console.error("Lỗi tải model hoa:", error);
+                document.getElementById('loader').innerText = "Lỗi: Không tìm thấy file bouquet.glb!";
+            });
 
-        createPinkPetalSystem();
-        
-        window.addEventListener('click', onPointerClick);
-        window.addEventListener('touchstart', onPointerClick, { passive: false });
-    }
+            createPinkPetalSystem();
+            window.addEventListener('click', onPointerClick);
+            window.addEventListener('touchstart', onPointerClick, { passive: false });
+        }
 
         function createPinkPetalSystem() {
             const canvas = document.createElement('canvas');
@@ -180,34 +184,37 @@
         }
 
        function onPointerClick(e) {
-   const music = document.getElementById('bgMusic');
-        if (music) {
-            music.play().catch(() => {}); 
-            music.pause();
-        }
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioContext.state === 'suspended') audioContext.resume();
 
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
-        mouse.x = (clientX / window.innerWidth) * 2 - 1;
-        mouse.y = -(clientY / window.innerHeight) * 2 + 1;
+            mouse.x = (clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(clientY / window.innerHeight) * 2 + 1;
 
-        raycaster.setFromCamera(mouse, camera);
-        if (envelope) {
-            const intersects = raycaster.intersectObjects(envelope.children, true);
-            if (intersects.length > 0) {
-                if (music) music.play();
-                
-                gsap.to(envelope.flapPivot.rotation, { x: Math.PI * 0.8, duration: 0.8 });
-                gsap.to(envelope.position, { y: -15, duration: 1.2, delay: 0.4, onComplete: () => {
-                    scene.remove(envelope);
-                    envelope = null;
-                    document.getElementById('hint-text').style.display = 'none';
-                }});
-                showCard();
+            raycaster.setFromCamera(mouse, camera);
+            if (envelope) {
+                const intersects = raycaster.intersectObjects(envelope.children, true);
+                if (intersects.length > 0) {
+                    const music = document.getElementById('bgMusic');
+                    if(music) {
+                        music.muted = false;
+                        music.play().catch(err => console.log("Nhạc bị chặn:", err));
+                    }
+                    
+                    gsap.to(envelope.flapPivot.rotation, { x: Math.PI * 0.8, duration: 0.8 });
+                    gsap.to(envelope.position, { y: -15, duration: 1.2, delay: 0.4, onComplete: () => {
+                        scene.remove(envelope);
+                        envelope = null;
+                        document.getElementById('hint-text').style.display = 'none';
+                    }});
+                    showCard();
+                }
             }
         }
-    }
 
         function showCard() {
             const card = document.getElementById('card');
