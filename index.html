@@ -109,7 +109,7 @@
             scene.add(light);
 
             const loader = new THREE.GLTFLoader();
-            loader.load('bouquet.glb', (gltf) => {
+            loader.load('bouquet.glb', function (gltf) {
                 bouquetModel = gltf.scene;
                 if (bouquetModel) {
                     const box = new THREE.Box3().setFromObject(bouquetModel);
