@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>8/3 cho người đặc biệt</title>
+    <title>8/3 imh</title>
     <style>
         body { margin: 0; overflow: hidden; background: radial-gradient(circle, #fff5f7, #ffdde1); font-family: 'Segoe UI', sans-serif; touch-action: none; }
         #loader {
@@ -14,53 +14,17 @@
         .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #d81b60; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 15px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        #ui { 
-            position: absolute; 
-            top: 60%; 
-            left: 50%; 
-            transform: translateX(-50%); 
-            text-align: center; 
-            pointer-events: none; 
-            z-index: 100; 
-            width: 95%; 
-            max-width: 450px; 
-        }
-        
-        .message-card { 
-            background: none; 
-            backdrop-filter: none; 
-            -webkit-backdrop-filter: none;
-            border: none;
-            padding: 20px; 
-            display: none;
-            box-shadow: none; 
-            opacity: 0;
-        }
-
-        .title-span { 
-            color: #d81b60; 
-            font-size: 1.4em; 
-            font-weight: bold; 
-            display: block; 
-            margin-bottom: 10px; 
-            text-shadow: 0 0 10px white, 0 0 5px white; 
-        }
-        .content-span { 
-            color: #1a1a1a; 
-            font-size: 1.1em; 
-            line-height: 1.5; 
-            font-weight: 600; 
-            display: block; 
-            text-shadow: 0 0 8px white, 0 0 4px white; 
-        }
-
+        #ui { position: absolute; top: 60%; left: 50%; transform: translateX(-50%); text-align: center; pointer-events: none; z-index: 100; width: 95%; max-width: 450px; }
+        .message-card { background: none; border: none; padding: 20px; display: none; opacity: 0; }
+        .title-span { color: #d81b60; font-size: 1.4em; font-weight: bold; display: block; margin-bottom: 10px; text-shadow: 0 0 10px white, 0 0 5px white; }
+        .content-span { color: #1a1a1a; font-size: 1.1em; line-height: 1.5; font-weight: 600; display: block; text-shadow: 0 0 8px white, 0 0 4px white; }
         .hint { position: absolute; bottom: 15px; width: 100%; text-align: center; color: #d81b60; font-weight: bold; pointer-events: none; font-size: 0.9em; z-index: 10; text-shadow: 0 0 10px white; }
     </style>
 </head>
 <body>
     <audio id="bgMusic" preload="auto" loop>
-    <source src="nhac.mp3" type="audio/mpeg">
-</audio>
+        <source src="nhac.mp3" type="audio/mpeg">
+    </audio>
 
     <div id="loader"><div class="spinner"></div>Chuẩn bị nhé...</div>
     
@@ -70,7 +34,7 @@
         </div>
     </div>
     
-    <div class="hint" id="hint-text">CHẠM VÀO PHONG THƯ CÓ ĐIỀU BẤT NGỜ [HÃY ẤN NHIỀU LẦN VÀO BỨC THƯ]</div>
+    <div class="hint" id="hint-text">CHẠM VÀO PHONG THƯ CÓ ĐIỀU BẤT NGỜ[SPAM NHIỀU LẦN VÀO BỨC THƯ]</div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -79,6 +43,7 @@
 
     <script>
         let scene, camera, renderer, controls, bouquetModel, envelope, particleSystem, clock;
+        let clickCount = 0; 
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
 
@@ -123,13 +88,101 @@
                 }
                 document.getElementById('loader').style.display = 'none';
             }, undefined, (error) => {
-                console.error("Lỗi tải model hoa:", error);
                 document.getElementById('loader').innerText = "Lỗi: Không tìm thấy file bouquet.glb!";
             });
 
             createPinkPetalSystem();
             window.addEventListener('click', onPointerClick);
             window.addEventListener('touchstart', onPointerClick, { passive: false });
+        }
+
+        function onPointerClick(e) {
+            const music = document.getElementById('bgMusic');
+            const hint = document.getElementById('hint-text');
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            mouse.x = (clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            if (envelope) {
+                const intersects = raycaster.intersectObjects(envelope.children, true);
+                if (intersects.length > 0) {
+                    clickCount++; 
+                    
+                    gsap.to(envelope.position, { y: envelope.position.y + 0.1, duration: 0.1, yoyo: true, repeat: 1 });
+
+                    if (music && clickCount < 6) {
+                        music.play().then(() => music.pause()).catch(() => {});
+                    }
+
+                    if (clickCount >= 6) {
+                        if (music) { music.currentTime = 0; music.play(); }
+                        
+                        hint.innerText = "";
+
+                        gsap.to(envelope.flapPivot.rotation, { x: Math.PI * 0.8, duration: 0.8 });
+                        gsap.to(envelope.position, { 
+                            y: -15, duration: 1.2, delay: 0.4, 
+                            onComplete: () => { scene.remove(envelope); envelope = null; }
+                        });
+                        showCard();
+                    }
+                }
+            }
+        }
+
+        function showCard() {
+            const card = document.getElementById('card');
+            card.style.display = 'block';
+            gsap.to(card, { opacity: 1, duration: 0.8 });
+            const hint = document.getElementById('hint-text');
+            hint.innerText = "Anh nhớ em..."; 
+
+            typeEffect(
+                "Chúc Chi 8/3 vui vẻ! 🌸", 
+                "Happy International Women's Day! Chúc em luôn xinh đẹp, tự tin và tỏa sáng như đóa hoa này. Hãy luôn hạnh phúc nhé!. Dù có ra sao, hãy yêu thương chính mình thật nhiều nhé!"
+            );
+        }
+
+        function typeEffect(titleText, contentText) {
+            let i = 0;
+            const el = document.getElementById('text'); 
+            el.innerHTML = "";
+            const titleSpan = document.createElement('span');
+            titleSpan.className = 'title-span';
+            titleSpan.innerHTML = titleText; 
+            el.appendChild(titleSpan);
+            const contentSpan = document.createElement('span');
+            contentSpan.className = 'content-span';
+            el.appendChild(contentSpan);
+
+            const timer = setInterval(() => {
+                if(i < contentText.length) { contentSpan.innerHTML += contentText.charAt(i); i++; }
+                else clearInterval(timer);
+            }, 50);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if(controls) controls.update();
+            const d = clock.getElapsedTime();
+            if(envelope) envelope.position.y += Math.sin(d * 4) * 0.002;
+            if (particleSystem) {
+                const positions = particleSystem.geometry.attributes.position.array;
+                const velocities = particleSystem.geometry.attributes.velocity.array;
+                for (let i = 0; i < positions.length / 3; i++) {
+                    positions[i * 3 + 1] += velocities[i * 3 + 1];
+                    positions[i * 3] += Math.sin(d + i) * 0.01;
+                    if (positions[i * 3 + 1] < -10) {
+                        positions[i * 3 + 1] = 15;
+                        positions[i * 3] = (Math.random() - 0.5) * 40;
+                    }
+                }
+                particleSystem.geometry.attributes.position.needsUpdate = true;
+            }
+            renderer.render(scene, camera);
         }
 
         function createPinkPetalSystem() {
@@ -153,9 +206,7 @@
             }
             geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
             geometry.setAttribute('velocity', new THREE.BufferAttribute(velocities, 3));
-            const material = new THREE.PointsMaterial({
-                size: 0.4, map: petalTexture, transparent: true, opacity: 0.9, depthTest: false, blending: THREE.NormalBlending, sizeAttenuation: true
-            });
+            const material = new THREE.PointsMaterial({ size: 0.4, map: petalTexture, transparent: true, opacity: 0.9, depthTest: false, sizeAttenuation: true });
             particleSystem = new THREE.Points(geometry, material);
             scene.add(particleSystem);
         }
@@ -180,92 +231,6 @@
             envelope.rotation.x = -Math.PI / 10;
             scene.add(envelope);
             gsap.to(envelope.position, { z: 2, duration: 1 });
-        }
-
-        function onPointerClick(e) {
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
-        mouse.x = (clientX / window.innerWidth) * 2 - 1;
-        mouse.y = -(clientY / window.innerHeight) * 2 + 1;
-
-        raycaster.setFromCamera(mouse, camera);
-        if (envelope) {
-            const intersects = raycaster.intersectObjects(envelope.children, true);
-            if (intersects.length > 0) {
-                const music = document.getElementById('bgMusic');
-                if(music) music.play();
-                
-               gsap.to(envelope.flapPivot.rotation, { x: Math.PI * 0.8, duration: 0.8 });
-               gsap.to(envelope.position, { 
-                y: -15, 
-                duration: 1.2, 
-                delay: 0.4, 
-                onComplete: () => {
-                    scene.remove(envelope);
-                    envelope = null;
-                }
-                });
-                showCard();
-            }
-        }
-    }
-
-        function showCard() {
-            const card = document.getElementById('card');
-            card.style.display = 'block';
-            gsap.to(card, { opacity: 1, duration: 0.8 });
-            document.getElementById('hint-text').innerText = "Anh nhớ em...";
-            
-            typeEffect(
-                "Chúc Chi 8/3 vui vẻ! 🌸", 
-                "Happy International Women's Day! Chúc em luôn xinh đẹp, tự tin và tỏa sáng như đóa hoa này. Hãy luôn hạnh phúc nhé!. Dù có ra sao, hãy yêu thương chính mình thật nhiều nhé!"
-            );
-        }
-
-        function typeEffect(titleText, contentText) {
-            let i = 0;
-            const el = document.getElementById('text'); 
-            el.innerHTML = "";
-            
-            const titleSpan = document.createElement('span');
-            titleSpan.className = 'title-span';
-            titleSpan.innerHTML = titleText; 
-            el.appendChild(titleSpan);
-
-            const contentSpan = document.createElement('span');
-            contentSpan.className = 'content-span';
-            el.appendChild(contentSpan);
-
-            const timer = setInterval(() => {
-                if(i < contentText.length) { 
-                    contentSpan.innerHTML += contentText.charAt(i);
-                    i++; 
-                }
-                else clearInterval(timer);
-            }, 120);
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-            if(controls) controls.update();
-            const d = clock.getElapsedTime();
-            if(envelope) envelope.position.y += Math.sin(d * 4) * 0.002;
-            if (particleSystem) {
-                const positions = particleSystem.geometry.attributes.position.array;
-                const velocities = particleSystem.geometry.attributes.velocity.array;
-                for (let i = 0; i < positions.length / 3; i++) {
-                    positions[i * 3 + 1] += velocities[i * 3 + 1];
-                    positions[i * 3] += Math.sin(d + i) * 0.01;
-                    if (positions[i * 3 + 1] < -10) {
-                        positions[i * 3 + 1] = 15;
-                        positions[i * 3] = (Math.random() - 0.5) * 40;
-                    }
-                }
-                particleSystem.geometry.attributes.position.needsUpdate = true;
-            }
-            
-            renderer.render(scene, camera);
         }
 
         window.addEventListener('resize', () => {
