@@ -78,8 +78,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 
     <script>
-        let audioContext;
         let scene, camera, renderer, controls, bouquetModel, envelope, particleSystem, clock;
+        let listener, sound, audioLoader; 
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
 
@@ -108,6 +108,17 @@
             const light = new THREE.DirectionalLight(0xffffff, 1);
             light.position.set(5, 15, 10);
             scene.add(light);
+            listener = new THREE.AudioListener();
+            camera.add(listener);
+
+            sound = new THREE.Audio(listener);
+
+           audioLoader = new THREE.AudioLoader();
+           audioLoader.load('./nhac.mp3', function(buffer) {
+        sound.setBuffer(buffer);
+        sound.setLoop(true);
+        sound.setVolume(0.5);
+    },
 
             const loader = new THREE.GLTFLoader();
             loader.load('bouquet.glb', function (gltf) {
@@ -184,37 +195,35 @@
         }
 
        function onPointerClick(e) {
-            if (!audioContext) {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    if (THREE.AudioContext.getContext().state === 'suspended') {
+        THREE.AudioContext.getContext().resume();
+    }
+
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+    mouse.x = (clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(clientY / window.innerHeight) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+    if (envelope) {
+        const intersects = raycaster.intersectObjects(envelope.children, true);
+        if (intersects.length > 0) {
+            if (sound && !sound.isPlaying) {
+                sound.play();
             }
-            if (audioContext.state === 'suspended') audioContext.resume();
-
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
-            mouse.x = (clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(clientY / window.innerHeight) * 2 + 1;
-
-            raycaster.setFromCamera(mouse, camera);
-            if (envelope) {
-                const intersects = raycaster.intersectObjects(envelope.children, true);
-                if (intersects.length > 0) {
-                    const music = document.getElementById('bgMusic');
-                    if(music) {
-                        music.muted = false;
-                        music.play().catch(err => console.log("Nhạc bị chặn:", err));
-                    }
-                    
-                    gsap.to(envelope.flapPivot.rotation, { x: Math.PI * 0.8, duration: 0.8 });
-                    gsap.to(envelope.position, { y: -15, duration: 1.2, delay: 0.4, onComplete: () => {
-                        scene.remove(envelope);
-                        envelope = null;
-                        document.getElementById('hint-text').style.display = 'none';
-                    }});
-                    showCard();
-                }
-            }
+            
+            // Hiệu ứng mở thư của Lâm
+            gsap.to(envelope.flapPivot.rotation, { x: Math.PI * 0.8, duration: 0.8 });
+            gsap.to(envelope.position, { y: -15, duration: 1.2, delay: 0.4, onComplete: () => {
+                scene.remove(envelope);
+                envelope = null;
+                if(document.getElementById('hint-text')) document.getElementById('hint-text').style.display = 'none';
+            }});
+            showCard();
         }
+    }
+}
 
         function showCard() {
             const card = document.getElementById('card');
