@@ -129,6 +129,7 @@
 
             createPinkPetalSystem();
             window.addEventListener('click', onPointerClick);
+            window.addEventListener('touchstart', onPointerClick, { passive: false });
         }
 
         function createPinkPetalSystem() {
@@ -182,22 +183,28 @@
         }
 
         function onPointerClick(e) {
-            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-            raycaster.setFromCamera(mouse, camera);
-            if (envelope) {
-                const intersects = raycaster.intersectObjects(envelope.children, true);
-                if (intersects.length > 0) {
-                    document.getElementById('bgMusic').play();
-                    gsap.to(envelope.flapPivot.rotation, { x: Math.PI * 0.8, duration: 0.8 });
-                    gsap.to(envelope.position, { y: -15, opacity: 0, duration: 1.2, delay: 0.4, onComplete: () => {
-                        scene.remove(envelope);
-                        envelope = null;
-                    }});
-                    showCard();
-                }
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        mouse.x = (clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(clientY / window.innerHeight) * 2 + 1;
+
+        raycaster.setFromCamera(mouse, camera);
+        if (envelope) {
+            const intersects = raycaster.intersectObjects(envelope.children, true);
+            if (intersects.length > 0) {
+                const music = document.getElementById('bgMusic');
+                if(music) music.play();
+                
+                gsap.to(envelope.flapPivot.rotation, { x: Math.PI * 0.8, duration: 0.8 });
+                gsap.to(envelope.position, { y: -15, duration: 1.2, delay: 0.4, onComplete: () => {
+                    scene.remove(envelope);
+                    envelope = null;
+                }});
+                showCard();
             }
         }
+    }
 
         function showCard() {
             const card = document.getElementById('card');
